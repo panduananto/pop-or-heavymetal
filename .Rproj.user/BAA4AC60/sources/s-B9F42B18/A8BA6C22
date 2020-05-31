@@ -7,14 +7,14 @@
     "folds" : "",
     "hash" : "0",
     "id" : "A8BA6C22",
-    "lastKnownWriteTime" : 1590929632,
-    "last_content_update" : 1590929632802,
+    "lastKnownWriteTime" : 1590941637,
+    "last_content_update" : 1590941637484,
     "path" : "C:/Users/Pandu/Desktop/ta-big-data/ta-big-data.Rmd",
     "project_path" : "ta-big-data.Rmd",
     "properties" : {
         "chunk_output_type" : "inline",
-        "cursorPosition" : "76,51",
-        "scrollLine" : "62",
+        "cursorPosition" : "133,30",
+        "scrollLine" : "130",
         "tempName" : "Untitled1"
     },
     "read_only" : false,
