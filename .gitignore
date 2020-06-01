@@ -1,4 +1,6 @@
 *.html
 *.docx
 *.pdf
-.Rproj.user
+/.Rproj.user
+/ta-big-data_cache
+/ta-big-data_files

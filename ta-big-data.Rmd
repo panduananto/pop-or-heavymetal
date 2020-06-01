@@ -12,6 +12,15 @@ library(spotifyr)
 library(dplyr)
 library(data.table)
 library(Amelia)
+library(ggplot2)
+library(tidyverse)
+library(knitr)
+```
+
+###### __Setup__
+
+```{r setup, results="hide", message=FALSE, warning=FALSE}
+opts_chunk$set(echo = TRUE)
 ```
 
 # Data Discovery
@@ -148,8 +157,108 @@ playlist$loudness <- - playlist$loudness
 
 ```{r shuffle dataset}
 set.seed(42)
-
 shufflebyrows <- sample(nrow(playlist))
 
-playlist <- playlist[shufflebyrows, ]
+playlist_shuffle <- playlist[shufflebyrows, ]
+```
+
+## Visualisasi data
+
+### Danceability
+
+```{r, danceability}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = danceability)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Danceability", breaks = seq(0, 1, 0.1))
+```
+
+### Energy
+
+```{r, energy}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = energy)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Energy", breaks = seq(0, 1, 0.1))
+```
+
+### Key
+
+```{r, key}
+
+```
+
+### Loudness
+
+```{r, loudness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = loudness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Loudness")
+```
+
+### Mode
+
+```{r, mode}
+
+```
+
+### Speechiness
+
+```{r, speechiness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = speechiness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Speechiness")
+```
+
+### Acousticness
+
+```{r, acousticness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = acousticness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Acousticness")
+```
+
+### Instrumentalness
+
+```{r, instrumentalness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = instrumentalness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Instrumentalness")
+```
+
+### Liveness
+
+```{r, liveness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = liveness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Liveness")
+```
+
+### Valence
+
+```{r, valence}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = valence)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Valence")
+```
+
+### Tempo
+
+```{r, tempo}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = tempo)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Tempo")
+```
+
+### Duration (in seconds)
+
+```{r, duration_sec}
+
 ```
