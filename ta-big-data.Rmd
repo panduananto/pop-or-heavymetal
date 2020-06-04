@@ -15,6 +15,9 @@ library(Amelia)
 library(ggplot2)
 library(tidyverse)
 library(knitr)
+library(grid)
+library(gridExtra)
+library(reshape2)
 ```
 
 ###### __Setup__
@@ -166,29 +169,62 @@ playlist_shuffle <- playlist[shufflebyrows, ]
 
 ### Danceability
 
-```{r, danceability}
+Danceability adalah fitur yang mendeskripsikan seberapa cocok sebuah lagu digunakan untuk menari. Rentang nilainya adalah dari 0.0-1.0. Semakin kecil nilainya maka semakin tidak cocok sebuah lagu digunakan untuk menari.
+
+```{r danceability}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = danceability)) +
   geom_point(aes(col = genre)) + 
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Danceability", breaks = seq(0, 1, 0.1))
 ```
 
+__Pengamatan:__ Lagu dengan genre pop memiliki sebaran data pada nilai danceability 0.5-0.9. Sedangkan lagu dengan genre heavy-metal memiliki sebaran data pada nilai dancebility 0.1-0.6. Lagu pop memang lebih cocok digunakan untuk menari.
+
 ### Energy
 
-```{r, energy}
+Energi adalah fitur yang merepresentasikan pengukuran intensitas dari sebuah lagu. Rentang nilianya adalah dari 0.0-1.0. Semakin besar nilainya maka lagu tersebut semakin energetik. Ciri lagu yang energetik adalah lagu yang temponya cepat, berisik, dan keras.
+
+```{r energy}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = energy)) +
   geom_point(aes(col = genre)) + 
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Energy", breaks = seq(0, 1, 0.1))
 ```
 
+__Penagamatan:__ Lagu dengan genre pop memiliki sebaran data pada nilai energy 0.0-0.9. Sedangkan lagu dengan genre heavy-metal memiliki sebaran data pada nilai energy 0.4-1.0. Lagu heavy-metal memang lebih energetik karena cirinya yang memiliki tempo cepat, berisik, dan keras.
+
 ### Key
 
-```{r, key}
+Key adalah fitur yang merupakan nada dasar sebuah lagu, pada dataset ini key dienumerasi dari char menjadi int yang dimulai dari 0 = C, 1 = C#, 2 = D, dan seterusnya.
 
+```{r key, fig.height=7}
+song_keys <- playlist_shuffle %>%
+  group_by(key) %>%
+  summarise(n_key_pop = sum(genre == "pop"),
+            n_key_heavymetal = sum(genre == "heavy-metal"))
+
+song_keys$key[c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)] <- c("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+
+song_keys$key <- factor(song_keys$key, levels = song_keys$key)
+
+plot_pop_key <- ggplot(data = song_keys, aes(x = key, y = n_key_pop, fill = key)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Distribusi Key Lagu Genre Pop", x = "Key", y = "Jumlah") +
+  geom_text(aes(label = n_key_pop), position = position_stack(vjust = 0.8))
+
+plot_heavymetal_key <-ggplot(data = song_keys, aes(x = key, y = n_key_heavymetal, fill = key)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Distribusi Key Lagu Genre Heavy Metal", x = "Key", y = "Jumlah") +
+  geom_text(aes(label = n_key_heavymetal), position = position_stack(vjust = 0.8))
+
+grid.arrange(plot_pop_key, plot_heavymetal_key, nrow = 2, heights = c(5, 5))
 ```
 
+__Pengamatan:__ Untuk lagu bergenre pop, key paling banyak adalah C# dan G. Untuk lagu bergenre heavy-metal, key yang paling banyak adalah D.
+
 ### Loudness
+
+Loudness adalah fitur yang memberikan nilai tingkat kekuataan bunyi atau kualitas suara dari suatu lagu. Nilainya berada di rentang -60dB-0dB. Pada eksperimen ini fitur loudness dirubah menjadi positive. Karena semakin besar tingkat loudness sebuah lagu, maka nilai loudnessnya akan semakin menuju minus.
 
 ```{r, loudness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = loudness)) +
@@ -197,13 +233,28 @@ ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = loudness)) +
   scale_y_continuous(name = "Loudness")
 ```
 
+__Pengamatan:__ Lagu dengan genre pop memiliki sebaran data pada nilai loudness 2-20dB. Sedangkan lagu dengan genre heavy-metal memiliki sebaran data pada nilai loudness 2-18dB. Rentang nilai loudness antara lagu genre pop dan heavy-metal ini bisa dibilang sama rata, karena apabila loudness terlalu besar maka lagu akan terlalu kencang sehingga tidak nyaman untuk didengar.
+
 ### Mode
 
-```{r, mode}
+Mode adalah fitur yang menjelaskan scaling suatu lagu, apakah berada pada Major Scale (1) atau Minor Scale (0).
 
+```{r, mode}
+counts_mode <- table(playlist_shuffle$genre, playlist_shuffle$mode)
+song_mode <- melt(counts_mode, c("genre", "mode")) %>% arrange(genre)
+
+ggplot(data = song_mode, aes(x = factor(mode), y = value, fill = genre)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Distribusi Mode Lagu", x = "Mode", y = "Jumlah") +
+  scale_x_discrete(labels = c("0" = "Minor", "1" = "Major")) +
+  geom_text(aes(label = value, y = value + 5), position = position_dodge(0.9), vjust = 0)
 ```
 
+__Pengamatan:__ Lagu dengan genre pop lebih banyak berada pada Major Scale, yaitu dengan jumlah 143. Lagu dengan genre heavy-metal lebih banyak berada pada Minor Scale, yaitu dengan jumlah 127.
+
 ### Speechiness
+
+Speechiness adalah fitur yang memberikan pengukuran suatu lagu yang terisi dengan lirik atau bahasa yang diucapkan. Rentang nilainya mulai dari 0.0-1.0. Nilai di atas 0.66 menandakan bahwa sebuah lagu hampir sepenuhnya terdiri dari sebuah lirik. Nilai di antara 0.33-0.66 menandakan bahwa sebuah lagu terdiri dari susunan lirik dan musik yang seimbang. Nilai di bawah 0.33 menandakan bahwa sebuah lagu terdiri dari musik dan lirik yang berirama. 
 
 ```{r, speechiness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = speechiness)) +
@@ -212,7 +263,11 @@ ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = speechiness)) +
   scale_y_continuous(name = "Speechiness")
 ```
 
+__Pengamatan:__ Untuk fitur speechiness lagu genre pop dan heavy-metal memiliki sebaran data yang hampir sama, yaitu rata-rata berada pada nilai di bawah 0.33. Namun, ada beberapa musik pop yang berada pada nilai 0.33-0.66. Lagu pop dan heavy-metal memang terdiri dari musik dan lirik yang dinyanyikan berirama. 
+
 ### Acousticness
+
+Acousticness adalah fitur yang menunjukkan pengukuran apakah sebuah lagi akustik atau tidak. Nilainya antara 0.0-1.0. Semakin mendekati ke angka 1.0 maka sebuah lagu semkain memilki sifat akustik.
 
 ```{r, acousticness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = acousticness)) +
@@ -221,7 +276,11 @@ ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = acousticness)) +
   scale_y_continuous(name = "Acousticness")
 ```
 
+__Pengamatan:__ Lagu genre pop memiliki sebaran data hampir di seluruh rentang nilai. Lagu genre heavy-metal memiliki sebaran data pada nilai 0.0~. Lagu heavy-metal memang lebih banyak menggunakan alat musik elektrik, sehingga nilai acousticnessnya pun sangat rendah.
+
 ### Instrumentalness
+
+Instrumentalness adalah fitur yang memberikan pengukuran iringan suara yang bukan vocal lirik pada sebuah lagu. Mulai dari nilai 0.5 dan semkain mendekati 1.0 maka lagu tersebut semakin tidak memiliki suara vocal lirik. 
 
 ```{r, instrumentalness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = instrumentalness)) +
@@ -230,7 +289,11 @@ ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = instrumentalness)) +
   scale_y_continuous(name = "Instrumentalness")
 ```
 
+__Pengamatan:__ Untuk fitur instrumentalness lagu genre pop dan heavy-metal memiliki sebaran data yang hampir sama, yaitu rata-rata berada pada nilai di bawah 0.5. Namun, ada beberapa musik heavy-metal yang berada pada nilai di atas 0.5. Ada beberapa lagu heavy-metal yang memang lebih banyak menampilkan suara alat musiknya.
+
 ### Liveness
+
+Liveness adalah fitur yang mendeteksi adanya penonton pada rekaman lagu tersebut. Semakin tinggi nilai livenessnya maka kemungkinan lagu tersebut direkam pada saat sedang ditampilkan secara live. Nilai di atas 0.8 menandakan kemungkinan yang besar bahwa sebuah lagu direkam pada saat sedang ditampilkan secara live.
 
 ```{r, liveness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = liveness)) +
@@ -239,7 +302,11 @@ ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = liveness)) +
   scale_y_continuous(name = "Liveness")
 ```
 
+__Pengamatan:__ Untuk fitur liveness lagu genre pop dan heavy-metal memiliki sebaran data yang hampir sama, yaitu rata-rata berada pada nilai di bawah 0.5. Namun, ada beberapa sample data yang hampir menyentuh nilai liveness 0.8, menandakan sample data tersebut direkam pada saat sedang ditampilkan secara live.
+
 ### Valence
+
+Valence adalah fitur yang memberikan tingkatan suasana yang dihasilkan dari suatu lagu, semakin tinggi akan memberikan suasana senang/ceria dan semakin rendah memberikan suasana sedih/suram. Rentang nilainya mulai dari 0.0-1.0.
 
 ```{r, valence}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = valence)) +
@@ -248,7 +315,11 @@ ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = valence)) +
   scale_y_continuous(name = "Valence")
 ```
 
+__Pengamatan:__ Untuk fitur valence lagu genre pop dan heavy-metal sekilas nampak perseberan datanya sama rata. Namun, juga dapat dilihat bahwa lagu heavy-metal lebih banyak berada pada rentang di bawah 0.40 dan lagu pop lebih banyak berada pada rentang di atas 0.40. Lagu heavy-metal kebanyakan memang memiliki suasana yang mencekam, dan lagu pop banyak yang memiliki suasana yang ceria atau upbeat. 
+
 ### Tempo
+
+Tempo adalah fitur yang memberikan tingkatan ukuran kecepatan suatu lagu yang diukur dalam Beats per Minute (BPM).
 
 ```{r, tempo}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = tempo)) +
@@ -257,8 +328,17 @@ ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = tempo)) +
   scale_y_continuous(name = "Tempo")
 ```
 
+__Pengamatan:__ Untuk fitur tempo lagu genre pop dan heavy-metal memiliki sebaran data yang merata.
+
 ### Duration (in seconds)
 
-```{r, duration_sec}
+Duration adalah fitur yang memberikan informasi mengenai durasi sebuah lagu. Pada eksperimen ini satuannya adalah detik.
 
+```{r, duration_sec}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = duration_sec)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Duration in sec", breaks = seq(100,630,30))
 ```
+
+__Pengamtan:__ Untuk fitur duration lagu genre pop rata-rata memiliki sebaran data pada nilai 130-250 detik, sedangkan lagu genre heavy-metal rata-rata memiliki sebaran data pada nilai 220-340 detik. Namun, ada beberapa lagu heavy-metal yang berada pada rentang 500-600 detik.

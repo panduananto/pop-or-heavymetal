@@ -1,0 +1,204 @@
+---
+title: "Klasifikasi Lagu Pop dan Heavy-Metal"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Library
+
+```{r kebutuhan library, results="hide", message=FALSE, warning=FALSE}
+library(dplyr)
+library(data.table)
+library(Amelia)
+library(ggplot2)
+library(tidyverse)
+library(knitr)
+```
+
+## Load data .csv
+
+```{r load csv file}
+playlist <- read.csv("masterplaylist.csv", header = TRUE, sep = ",")
+```
+
+## Deskripsi data
+
+```{r data description}
+glimpse(playlist)
+```
+
+## Deskripsi statistik
+
+```{r statistic description}
+summary(playlist)
+```
+
+------
+
+# Data Preparation
+
+## Hapus kolom yang tidak perlu
+
+```{r remove unnecessary column}
+playlist <- subset(playlist, select = -c(X, id, uri, track_href, analysis_url, type, time_signature))
+```
+
+## Periksa missing value
+
+```{r check for missing value}
+missmap(playlist, main = "Missing value")
+```
+
+## Ubah satuan kolom duration_ms dari milliseconds ke seconds
+
+```{r milliseconds to seconds}
+playlist$duration_ms <- round(playlist$duration_ms / 1000)
+
+# ubah nama kolom duration_ms menjadi duration_sec
+colnames(playlist)[12] <- "duration_sec"
+```
+
+## Konversi nilai loudness dari negative jadi positive
+
+```{r convert loudness value to positive}
+playlist$loudness <- - playlist$loudness
+```
+
+## Shuffle dataset
+
+```{r shuffle dataset}
+set.seed(42)
+shufflebyrows <- sample(nrow(playlist))
+
+playlist_shuffle <- playlist[shufflebyrows, ]
+```
+
+## Visualisasi data
+
+### Danceability
+Merupakan fitur yang memperhitungkan suatu nilai kemungkinan bagaimana lagu tersebut dapat digunakan untuk dansa
+```{r, danceability}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = danceability)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Danceability", breaks = seq(0, 1, 0.1))
+```
+
+### Energy
+Tingkatan dari energi suatu lagu, berhubungan dengan beberapa fitur seperti loudness dsb. Semakin tinggi nilai maka semakin energik suatu lagu
+```{r, energy}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = energy)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data", breaks = seq(0, 250, 50)) + 
+  scale_y_continuous(name = "Energy", breaks = seq(0, 1, 0.1))
+```
+
+### Key
+Nada dasar suatu lagu, enumerasi dari char menjadi int dengan dimulai dari 0 yaitu nada dasar C dan selanjutnya
+```{r, key}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = key)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Key", breaks = seq(0, 11, 1))
+```
+
+### Loudness
+Tingkat kekuataan bunyi secara rata-rata suatu lagu (satuan dB) namun di positifkan nilanya
+```{r, loudness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = loudness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Loudness")
+```
+
+### Mode
+Scaling suatu lagu apakah pada Major Scale (1) atau Minor Scale (0)
+```{r, mode}
+counts <- table(playlist_shuffle$genre, playlist_shuffle$mode)
+barplot(counts, main="Distribusi Mode",
+   xlab="Mode", col=c("red","blue"), legend = rownames(counts))
+```
+
+### Speechiness
+Pengukuran suatu lagu yang terisi dengan lirik atau bahasa yang diucapkan (Keterbalikan Instrumentalness)
+```{r, speechiness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = speechiness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Speechiness", breaks = seq(0,1,0.05))
+```
+
+### Acousticness
+Pengukuran suatu lagu apakah Akustik atau tidak
+```{r, acousticness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = acousticness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(, breaks = seq(0,1,0.1))
+```
+
+### Instrumentalness
+Pengukuran suatu lagu tentang iringan suara yang bukan vocal lirik
+```{r, instrumentalness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = instrumentalness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Instrumentalness", breaks = seq(0,1,0.1))
+```
+
+### Liveness
+Tingkat pengukuran dimana suatu lagu direkam dengan adanya audiens (Live) atau direkam melewati dapur rekaman
+```{r, liveness}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = liveness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Liveness")
+```
+
+### Valence
+Tingkatan suasana yang dihasilkan dari suatu lagu, semakin tinggi akan memberikan suasana senang dan semakin rendah memberikan suasana sedih
+```{r, valence}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = valence)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Valence")
+```
+
+### Tempo
+Tingkat ukuran kecepatan suatu lagu berdasarkan Beats per Minute (BPM)
+```{r, tempo}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = tempo)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Tempo", breaks = seq(60,210, 10))
+```
+
+### Duration (in seconds)
+Durasi lagu dalam satuan detik 
+```{r, duration_sec}
+ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = duration_sec)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Data") + 
+  scale_y_continuous(name = "Duration in sec", breaks = seq(100,630,30))
+```
+
+### Percobaan
+```{r, barplot}
+# Stacked Bar Plot with Colors and Legend
+counts <- table(playlist_shuffle$speechiness, playlist_shuffle$acousticness)
+barplot(counts, horiz=TRUE ,main="Song by Speechiness and Acousticness",
+  xlab="X", col=c("darkblue","red"),
+  legend = rownames(counts)) 
+```
+
+```{r, loudness}
+ggplot(playlist_shuffle, aes(loudness, acousticness)) +
+  geom_point(aes(col = genre)) + 
+  scale_x_continuous(name = "Loudness", breaks = seq(0, 20, 1.25)) + 
+  scale_y_continuous(name = "Acousticness")
+```
+## K-Nearest Neighbor
+```{r, knn}
+ran <- sample(1:nrow(playlist), 0/9 * nrow(playlist))
+```
