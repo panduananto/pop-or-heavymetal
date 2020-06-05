@@ -18,6 +18,10 @@ library(knitr)
 library(grid)
 library(gridExtra)
 library(reshape2)
+library(caTools)
+library(caret)
+library(class)
+library(kableExtra)
 ```
 
 ###### __Setup__
@@ -174,6 +178,7 @@ Danceability adalah fitur yang mendeskripsikan seberapa cocok sebuah lagu diguna
 ```{r danceability}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = danceability)) +
   geom_point(aes(col = genre)) + 
+  labs(title = "Distribusi Fitur Danceability") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Danceability", breaks = seq(0, 1, 0.1))
 ```
@@ -188,6 +193,7 @@ Energi adalah fitur yang merepresentasikan pengukuran intensitas dari sebuah lag
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = energy)) +
   geom_point(aes(col = genre)) + 
   scale_x_continuous(name = "Data") + 
+  labs(title = "Distribusi Fitur Energy") +
   scale_y_continuous(name = "Energy", breaks = seq(0, 1, 0.1))
 ```
 
@@ -229,6 +235,7 @@ Loudness adalah fitur yang memberikan nilai tingkat kekuataan bunyi atau kualita
 ```{r, loudness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = loudness)) +
   geom_point(aes(col = genre)) + 
+  labs(title = "Distribusi Fitur Loudness") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Loudness")
 ```
@@ -245,7 +252,7 @@ song_mode <- melt(counts_mode, c("genre", "mode")) %>% arrange(genre)
 
 ggplot(data = song_mode, aes(x = factor(mode), y = value, fill = genre)) +
   geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Distribusi Mode Lagu", x = "Mode", y = "Jumlah") +
+  labs(title = "Distribusi Fitur Mode", x = "Mode", y = "Jumlah") +
   scale_x_discrete(labels = c("0" = "Minor", "1" = "Major")) +
   geom_text(aes(label = value, y = value + 5), position = position_dodge(0.9), vjust = 0)
 ```
@@ -259,6 +266,7 @@ Speechiness adalah fitur yang memberikan pengukuran suatu lagu yang terisi denga
 ```{r, speechiness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = speechiness)) +
   geom_point(aes(col = genre)) + 
+  labs(title = "Distribusi Fitur Speechiness") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Speechiness")
 ```
@@ -272,6 +280,7 @@ Acousticness adalah fitur yang menunjukkan pengukuran apakah sebuah lagi akustik
 ```{r, acousticness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = acousticness)) +
   geom_point(aes(col = genre)) + 
+  labs(title = "Distribusi Fitur Acousticness") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Acousticness")
 ```
@@ -285,6 +294,7 @@ Instrumentalness adalah fitur yang memberikan pengukuran iringan suara yang buka
 ```{r, instrumentalness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = instrumentalness)) +
   geom_point(aes(col = genre)) + 
+  labs(title = "Distribusi Fitur Instrumentalness") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Instrumentalness")
 ```
@@ -298,6 +308,7 @@ Liveness adalah fitur yang mendeteksi adanya penonton pada rekaman lagu tersebut
 ```{r, liveness}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = liveness)) +
   geom_point(aes(col = genre)) + 
+  labs(title = "Distribusi Fitur Liveness") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Liveness")
 ```
@@ -311,6 +322,7 @@ Valence adalah fitur yang memberikan tingkatan suasana yang dihasilkan dari suat
 ```{r, valence}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = valence)) +
   geom_point(aes(col = genre)) + 
+  labs(title = "Distribusi Fitur Valence") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Valence")
 ```
@@ -324,6 +336,7 @@ Tempo adalah fitur yang memberikan tingkatan ukuran kecepatan suatu lagu yang di
 ```{r, tempo}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = tempo)) +
   geom_point(aes(col = genre)) + 
+  labs(title = "Distribusi Fitur Tempo") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Tempo")
 ```
@@ -336,9 +349,146 @@ Duration adalah fitur yang memberikan informasi mengenai durasi sebuah lagu. Pad
 
 ```{r, duration_sec}
 ggplot(data = playlist_shuffle, aes(x = seq(1, 500, 1), y = duration_sec)) +
-  geom_point(aes(col = genre)) + 
+  geom_point(aes(col = genre)) +
+  labs(title = "Distribusi Fitur Duration (sec)") +
   scale_x_continuous(name = "Data") + 
   scale_y_continuous(name = "Duration in sec", breaks = seq(100,630,30))
 ```
 
 __Pengamtan:__ Untuk fitur duration lagu genre pop rata-rata memiliki sebaran data pada nilai 130-250 detik, sedangkan lagu genre heavy-metal rata-rata memiliki sebaran data pada nilai 220-340 detik. Namun, ada beberapa lagu heavy-metal yang berada pada rentang 500-600 detik.
+
+## Normalisasi
+
+### Deskripsi statistik
+
+```{r}
+summary(playlist_shuffle)
+```
+
+Dapat dilihat pada hasil deskripsi statistik di atas, pada nilai mean masing-masing fitur memiliki rentang data yang tidak seragam. Oleh karena itu, kami akan melakukan normalisasi menggunakan metode min-max agar nilai rentang data terletak pada nilai 0-1.
+
+### Normalisasi min-max
+
+```{r}
+# fungsi normalisasi min-max
+minmax <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+
+# dataframe baru untuk tampung nilai fitur normalisasi
+playlist_norm <- playlist_shuffle
+
+# apply fungsi min-max pada kolom 1-12
+playlist_norm <- lapply(playlist_norm[1:12], minmax)
+
+# ubah list jadi dataframe
+playlist_norm <- as.data.frame(playlist_norm)
+
+# tambah lagi kolom genre
+playlist_norm <- cbind(playlist_norm, genre=playlist_shuffle$genre)
+
+# deskprisi statistik
+summary(playlist_norm)
+```
+
+__Hasil:__ Nilai tiap fitur sample data sudah berada pada rentang 0-1.
+
+# Model Planning
+
+Pada eksperimen ini kami akan menggunakan algoritma K-Nearest Neighbour (K-NN).
+
+## Backup data original
+
+```{r}
+playlist_mod <- playlist_norm
+
+playlist_mod$genre = ifelse(playlist_mod$genre == "pop", 1, 0)
+playlist_mod$genre <- factor(playlist_mod$genre)
+```
+
+## Pisah data jadi training set dan testing set
+
+```{r}
+set.seed(42)
+indexTrain <- createDataPartition(y = playlist_mod$genre,
+                                  p = 0.75,
+                                  list = FALSE)
+
+training_set = playlist_mod[indexTrain, ]
+testing_set = playlist_mod[-indexTrain, ]
+```
+
+## Mencari nilai K terbaik
+
+```{r}
+set.seed(42)
+control <- trainControl(method = "repeatedcv", repeats = 3)
+knnFit <- train(genre ~ ., 
+                data = training_set, 
+                method = "knn", 
+                trControl = control,
+                tuneLength = 20)
+
+knnFit
+```
+
+## Plot akurasi tiap nilai K
+
+```{r}
+plot(knnFit,
+     main = "Akurasi Tiap Nilai K",
+     xlab = "K",
+     ylab = "Akurasi")
+```
+
+
+## Model K-NN
+
+```{r}
+set.seed(42)
+classifier <- train(training_set[, 1:12], 
+                    training_set[, 13], 
+                    tuneGrid = data.frame(k = 7), 
+                    method = "knn")
+
+predictions <- predict.train(object = classifier, testing_set[, 1:12], type="raw")
+
+confusionMatrix(testing_set[, 13], predictions)
+```
+
+## Validasi dengan k-fold cross validation
+
+```{r}
+set.seed(42)
+folds = createFolds(playlist_mod$genre, k = 10)
+
+cv = lapply(folds, function(x) {
+  training_fold = playlist_mod[-x, ]
+  test_fold = playlist_mod[x, ]
+  classifier_cv = train(training_fold[, 1:12], 
+                        training_fold[, 13], 
+                        tuneGrid = data.frame(k = 7), 
+                        method = "knn")
+  y_pred_cv = predict.train(object = classifier_cv, test_fold[, 1:12], type="raw")
+  cm_cv = table(test_fold$genre, y_pred_cv)
+  accuracy = (cm_cv[1,1] + cm_cv[2,2]) / 
+    (cm_cv[1,1] + cm_cv[2,2] + cm_cv[1,2] + cm_cv[2,1])
+  
+  return(accuracy)
+})
+
+accuracy = mean(as.numeric(cv))
+
+cv_df <- data.frame(akurasi=unlist(cv))
+
+cv_df %>%
+  kable() %>%
+  kable_styling(full_width = TRUE)
+```
+
+## Rata-rata akurasi dari hasil k-fold cross validation
+
+```{r}
+cat("Rata-rata akurasi dari hasil k-fold cross validation: ", accuracy)
+```
+
